@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+*.tsbuildinfo
+
+# Data
+data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+test-data-*
+
+# Claude
+.claude/
+.mcp.json
+.playwright-mcp/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
