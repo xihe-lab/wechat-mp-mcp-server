@@ -1,6 +1,6 @@
 {
   "name": "@xihe-lab/wechat-mp-mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "WeChat MP (Media Platform) MCP Server for managing articles, drafts and media via AI assistants",
   "type": "module",
   "main": "dist/index.js",
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "start": "node dist/index.js",
-    "prepublishOnly": "npm run build && node scripts/add-shebang.cjs",
+    "prepublishOnly": "npm run build",
     "build": "vite build",
     "dev": "vite",
     "lint": "eslint src --ext ts,tsx",
