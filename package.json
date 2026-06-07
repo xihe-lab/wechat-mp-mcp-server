@@ -1,7 +1,7 @@
 {
   "name": "@xihe-lab/wechat-mp-mcp-server",
   "version": "0.1.0",
-  "description": "WeChat Official Account (MP) MCP Server for AI Applications",
+  "description": "WeChat MP (Media Platform) MCP Server for managing articles, drafts and media via AI assistants",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
