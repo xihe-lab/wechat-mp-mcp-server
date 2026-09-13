@@ -17,16 +17,33 @@
 
 ## 快速开始
 
-### 1. 配置 MCP 客户端
+### 1. 获取凭证
+
+#### 方式一：AppID / AppSecret（官方 API 层）
+
+1. 登录 [微信公众平台](https://mp.weixin.qq.com/)，进入 **设置与开发 → 基本配置**
+2. 记录 **AppID**，点击"重置"获取 **AppSecret**（只显示一次，注意保存）
+3. **IP 白名单**：官方 API 层要求把调用方出口 IP 加入白名单（同一页面下方）。家庭/办公网络切换会导致 40164——可调用 `wechat_auth_health_check` 获取当前出口 IP 与加白指引；或改用方式二规避
+
+开发者文档与接入指引见 [微信开放平台 · 公众号开发](https://developers.weixin.qq.com/platform)（服务端 API 目录、测试号申请、错误码说明均在其中）。
+
+#### 方式二：Web 会话层（免凭证）
+
+只用 **长文直写 / 传图 / 数据统计** 等 Web 会话工具时，无需 AppSecret——首次调用 `wechat_web_login` 扫码登录即可（cookie 持久保存）。适合不想维护 IP 白名单的场景。
+
+### 2. 配置 MCP 客户端
 
 #### 方式一：一键安装命令（Claude Code）
 
-替换必填参数后执行。`-s user` 为用户级配置（所有项目生效），改为 `-s project` 则仅当前项目生效：
+注意替换以下参数（必填项标记为 **必填**，其余可选）。`-s user` 为用户级配置（所有项目生效），改为 `-s project` 则仅当前项目生效：
 
 ```bash
 claude mcp add -s user wechat-mp \
-  --env WECHAT_APP_ID=your_app_id \
-  --env WECHAT_APP_SECRET=your_app_secret \
+  --env WECHAT_APP_ID=your_app_id \                            # 必填（官方 API 层）：公众号 AppID
+  --env WECHAT_APP_SECRET=your_app_secret \                    # 必填（官方 API 层）：公众号 AppSecret
+  --env DATA_DIR=/path/to/data \                               # 可选：数据目录（凭据 + 浏览器 profile），默认 ./data
+  --env WECHAT_BROWSER_CHANNEL=chrome \                        # 可选：Web 会话层浏览器，默认本机 Chrome
+  --env WECHAT_BROWSER_HEADLESS=false \                        # 可选：是否无头，默认 false（登录需可见窗口扫码）
   -- npx -y "@xihe-lab/wechat-mp-mcp-server@latest"
 ```
 
@@ -39,7 +56,7 @@ claude mcp remove wechat-mp
 
 #### 方式二：手动配置
 
-编辑 Claude Code 配置文件（用户目录下 `.claude.json`）：
+编辑 Claude Code 的配置文件（用户目录下 `.claude.json`）：
 
 ```json
 {
@@ -48,8 +65,11 @@ claude mcp remove wechat-mp
       "command": "npx",
       "args": ["-y", "@xihe-lab/wechat-mp-mcp-server@latest"],
       "env": {
-        "WECHAT_APP_ID": "your_app_id",
-        "WECHAT_APP_SECRET": "your_app_secret"
+        "WECHAT_APP_ID": "",
+        "WECHAT_APP_SECRET": "",
+        "DATA_DIR": "",
+        "WECHAT_BROWSER_CHANNEL": "chrome",
+        "WECHAT_BROWSER_HEADLESS": "false"
       }
     }
   }
@@ -60,8 +80,24 @@ claude mcp remove wechat-mp
 
 - **Claude Desktop**：编辑 `~/Library/Application Support/Claude/claude_desktop_config.json`（macOS）
 - **Cursor / VS Code**：在项目根目录创建 `.cursor/mcp.json` 或 `.vscode/mcp.json`
+- **WorkBuddy（腾讯 CodeBuddy 办公客户端）**：见下方专节
 
 配置格式与上方相同。
+
+#### WorkBuddy（腾讯 CodeBuddy 办公客户端）
+
+WorkBuddy 采用标准 `mcpServers` 配置，支持两级配置文件：
+
+| 级别 | 配置文件路径 | 适用场景 |
+|------|-------------|---------|
+| 用户级 | `~/.workbuddy/mcp.json` | 配置一次，所有项目复用（推荐） |
+| 项目级 | `<项目目录>/.workbuddy/mcp.json` | 仅当前项目生效 |
+
+操作入口：侧边栏 **插件** → 右上角 **MCP 服务器** → **配置 MCP**，在可视化编辑器中粘贴与上方相同的 `mcpServers` 配置并保存（也可直接编辑上述路径的 JSON 文件）。
+
+保存后检查 MCP Server 状态灯：🟢 连接成功；🔴 配置异常（依次检查 JSON 格式、`npx` 环境、凭证有效性）。
+
+> 安全提示：`WECHAT_APP_SECRET` 是调用凭证。使用项目级配置时，请将 `.workbuddy/` 加入 `.gitignore`，避免提交到仓库。
 
 #### 方式三：从源码运行
 
@@ -88,7 +124,7 @@ pnpm install && pnpm build
 }
 ```
 
-### 2. 开始使用
+### 3. 开始使用
 
 配置完成后重启客户端，直接用自然语言与 AI 助手对话：
 
@@ -96,9 +132,13 @@ pnpm install && pnpm build
 
 > 创建一篇草稿，标题是"每周技术分享"，内容如下...
 
-> 查看最近的草稿列表
+> 检查这篇文章的 HTML 有没有排版问题：/path/to/文章.html
 
-> 把这篇草稿发布出去
+> 扫码登录公众号后台
+
+> 把这篇长文直接写进草稿箱：/path/to/文章-待发布.html
+
+> 查一下最近 7 天的阅读数据
 
 ## 环境变量
 
@@ -278,9 +318,39 @@ server 进程启动即崩溃，常见原因：本地源码方式运行但未 `pn
 
 ## 更新
 
-MCP 客户端使用 `npx` 运行时会自动检查并下载最新版本。
+MCP 客户端使用 `npx` 运行时会自动检查并下载最新版本。如需确保使用最新版本：
+
+### Claude Code
+
+重新安装配置（会自动使用最新版本）：
+
+```bash
+claude mcp remove wechat-mp
+claude mcp add -s user wechat-mp \
+  --env WECHAT_APP_ID=your_app_id \
+  --env WECHAT_APP_SECRET=your_app_secret \
+  -- npx -y "@xihe-lab/wechat-mp-mcp-server@latest"
+```
+
+### Claude Desktop / Cursor
+
+修改配置文件中的版本号为 `@latest` 或删除版本锁定（WorkBuddy 的配置文件路径见「配置 MCP 客户端 → WorkBuddy」小节）：
+
+```json
+{
+  "mcpServers": {
+    "wechat-mp": {
+      "command": "npx",
+      "args": ["-y", "@xihe-lab/wechat-mp-mcp-server@latest"],
+      "env": { ... }
+    }
+  }
+}
+```
 
 ### npm 全局安装方式
+
+如果通过 npm 全局安装使用：
 
 ```bash
 # 查看当前版本
@@ -288,9 +358,24 @@ npm list -g @xihe-lab/wechat-mp-mcp-server
 
 # 更新到最新版本
 npm update -g @xihe-lab/wechat-mp-mcp-server
+
+# 或指定版本安装
+npm install -g @xihe-lab/wechat-mp-mcp-server@0.2.0
 ```
 
 更新后需重启 MCP 客户端。
+
+### npx 缓存清理
+
+如果 npx 使用了旧版本缓存，可手动清理后重新运行：
+
+```bash
+# 清理 npx 缓存
+npx clear-npx-cache
+
+# 或手动删除缓存目录
+rm -rf ~/.npm/_npx
+```
 
 ### 查看版本信息
 
