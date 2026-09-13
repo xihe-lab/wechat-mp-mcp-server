@@ -80,7 +80,7 @@ export function registerMediaTools(server: McpServer): void {
           responseType: 'arraybuffer',
         },
       )
-      const contentType = resp.headers['content-type'] ?? ''
+      const contentType = String(resp.headers['content-type'] ?? '')
       if (contentType.includes('application/json') || contentType.includes('text/plain')) {
         const text = new TextDecoder().decode(resp.data as ArrayBuffer)
         const json = JSON.parse(text)
@@ -132,4 +132,43 @@ export function registerMediaTools(server: McpServer): void {
       return formatToolError(error)
     }
   })
+
+  server.tool(
+    'wechat_media_uploadimg',
+    '上传图文消息内的图片（正文配图专用端点），返回可直接嵌入正文 HTML 的 mmbiz URL。注意：官方 draft/add 接口会过滤非 mmbiz 域名的外链图片，正文图片必须走本接口或 wechat_web_upload_image',
+    {
+      file_path: z.string().describe('本地图片文件路径（JPG/PNG，≤10MB）'),
+    },
+    async ({ file_path }) => {
+      try {
+        validateFile('image', file_path)
+        const token = await getAccessToken()
+        const FormData = (await import('form-data')).default
+        const form = new FormData()
+        form.append('media', fs.createReadStream(file_path))
+
+        const resp = await getClient().post(
+          `https://api.weixin.qq.com/cgi-bin/media/uploadimg`,
+          form,
+          {
+            headers: { ...form.getHeaders() },
+            params: { access_token: token },
+          },
+        )
+        const data = resp.data
+        if (data.errcode && data.errcode !== 0) {
+          throw new WechatMcpError('WECHAT_003', `${data.errmsg} (errcode: ${data.errcode})`)
+        }
+        logInfo('Content image uploaded', { url: data.url })
+        return {
+          content: [{
+            type: 'text' as const,
+            text: JSON.stringify({ url: data.url }),
+          }],
+        }
+      } catch (error) {
+        return formatToolError(error)
+      }
+    },
+  )
 }

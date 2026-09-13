@@ -22,7 +22,7 @@ describe('WechatMcpError', () => {
 
   it('should define all error codes', () => {
     const codes = Object.keys(ErrorCodes)
-    expect(codes).toHaveLength(6)
+    expect(codes).toHaveLength(9)
     expect(codes).toContain('WECHAT_001')
     expect(codes).toContain('WECHAT_006')
   })

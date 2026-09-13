@@ -12,7 +12,7 @@ let client: AxiosInstance | null = null
 function createClient(): AxiosInstance {
   const instance = axios.create({
     baseURL: BASE_URL,
-    timeout: 10_000,
+    timeout: 30_000,
   })
 
   instance.interceptors.request.use(async (config) => {
@@ -59,7 +59,7 @@ export async function fetchNewToken(): Promise<string> {
 
   const { access_token, expires_in, errcode, errmsg } = resp.data
   if (errcode) {
-    throw new WechatMcpError('WECHAT_002', `${errmsg} (errcode: ${errcode})`)
+    throw new WechatMcpError('WECHAT_002', enhanceTokenErrorMessage(errcode, errmsg ?? '获取 Access Token 失败'))
   }
 
   const expiresAt = Math.floor(Date.now() / 1000) + expires_in
@@ -68,6 +68,31 @@ export async function fetchNewToken(): Promise<string> {
   logInfo('Access token refreshed', { expires_in })
 
   return access_token
+}
+
+/**
+ * 为 access_token 获取失败的常见错误码附加可操作指引。
+ * errcode 语义见微信官方文档「通用错误码」。
+ */
+export function enhanceTokenErrorMessage(errcode: number, errmsg: string): string {
+  const base = `${errmsg} (errcode: ${errcode})`
+  if (errcode === 40164) {
+    return `${base} —— 当前出口 IP 不在白名单。请到 mp.weixin.qq.com → 设置与开发 → 基本配置 → IP 白名单中添加上述 IP（切换 Wi-Fi/热点后出口 IP 会变化）`
+  }
+  if (errcode === 40125 || errcode === 40001 || errcode === 41004) {
+    return `${base} —— AppSecret 已失效或不正确。请在公众平台重置 AppSecret 后，更新环境变量并调用 wechat_auth_sync_from_env 同步`
+  }
+  return base
+}
+
+/** 获取当前网络出口 IP（用于 40164 诊断提示） */
+export async function fetchPublicIp(): Promise<string | null> {
+  try {
+    const resp = await axios.get<{ ip: string }>('https://api.ipify.org?format=json', { timeout: 5000 })
+    return resp.data?.ip ?? null
+  } catch {
+    return null
+  }
 }
 
 export async function getAccessToken(): Promise<string> {

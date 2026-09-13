@@ -1,0 +1,44 @@
+# PR / feature 分支轻量构建门禁（参考 tapd-mcp-server 同名流水线，去除基座编排部分）。
+# main 分支不由本门禁覆盖；releases/** 由 release.yml 接管。
+name: Build Check
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main, 'releases/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: buildcheck-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 构建 · 类型 · 测试
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4 # 版本唯一真源 = package.json packageManager
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # pnpm-workspace.yaml 已声明 allowBuilds（better-sqlite3/esbuild），
+      # CI 内原生模块走 prebuild-install 下载预编译产物
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build & Type check
+        run: |
+          pnpm build
+          pnpm type-check
+
+      - name: Test
+        run: pnpm test

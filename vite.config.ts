@@ -19,6 +19,7 @@ export default defineConfig({
         'better-sqlite3',
         'axios',
         'form-data',
+        'playwright-core',
         'node:fs',
         'node:path',
         'node:process',

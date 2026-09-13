@@ -5,6 +5,9 @@ export const ErrorCodes = {
   WECHAT_004: '草稿创建失败',
   WECHAT_005: '发布失败',
   WECHAT_006: '网络错误',
+  WECHAT_007: '浏览器/Web 会话错误',
+  WECHAT_008: 'HTML 校验失败',
+  WECHAT_009: '公众号后台未登录（请先调用 wechat_web_login 扫码登录）',
 } as const
 
 export type ErrorCode = keyof typeof ErrorCodes

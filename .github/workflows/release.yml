@@ -1,0 +1,128 @@
+# 发布流水线：构建 → OIDC 可信发布 → tag + GitHub Release（参考 tapd-mcp-server 同名流水线）
+# 触发：
+#   ① push releases/<版本>——常规发布（版本须与 package.json 一致）
+#   ② 手动 dispatch——补历史 tag/Release（npm 已发布的版本自动跳过发布步）
+# 前置（一次性，人工在 Web 配置）：
+#   - npmjs.org → @xihe-lab/wechat-mp-mcp-server → Settings → Trusted Publishing
+#     登记 GitHub 仓库 + workflow（release.yml）+ environment（npm publish）
+#   - GitHub 仓库 → Settings → Environments → 创建 npm publish（可选挂 required reviewers 人审）
+name: Release
+
+on:
+  push:
+    branches: ['releases/**']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '发布版本（须与发布提交 package.json 一致）'
+        required: true
+      sha:
+        description: '发布提交（tag 落点；缺省为 ref HEAD）'
+        required: false
+
+permissions:
+  contents: write
+  id-token: write # npm Trusted Publishing（OIDC）
+
+concurrency:
+  group: release-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: 构建 · 发布 · tag
+    runs-on: ubuntu-latest
+    environment: npm publish # 与 npm Trusted Publishing 登记一致
+    steps:
+      - name: Checkout（全历史，changelog 需要）
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 发布提交定位：dispatch 的 sha 可早于 ref HEAD（补历史）；push 时即 HEAD
+      - name: 定位发布提交
+        run: |
+          if [ -n "${{ inputs.sha }}" ]; then
+            git checkout --detach "${{ inputs.sha }}"
+          fi
+          echo "发布提交: $(git rev-parse --short HEAD)"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4 # 版本唯一真源 = package.json packageManager
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      # npm Trusted Publishing（OIDC）需要 npm ≥ 11.5 原生支持
+      - name: Upgrade npm for Trusted Publishing
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build & Type check & Test
+        run: |
+          pnpm build
+          pnpm type-check
+          pnpm test
+
+      - name: 前置校验（版本一致性 / 已发布探测）
+        id: check
+        run: |
+          PV=$(node -p "require('./package.json').version")
+          NAME=$(node -p "require('./package.json').name")
+          if [ "${{ github.event_name }}" = "push" ]; then
+            BRANCH="${GITHUB_REF#refs/heads/}"; V="${BRANCH#releases/}"
+          else
+            V="${{ inputs.version }}"
+          fi
+          if [ "$V" != "$PV" ]; then
+            echo "::error::版本不一致：期望 $V，package.json=$PV"
+            exit 1
+          fi
+          if npm view "$NAME@$PV" version >/dev/null 2>&1; then
+            echo "SKIP_PUBLISH=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$NAME@$PV 已发布，跳过发布（仅补 tag/Release）"
+          else
+            echo "SKIP_PUBLISH=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish（OIDC Trusted Publishing）
+        if: steps.check.outputs.SKIP_PUBLISH != 'true'
+        run: |
+          # Trusted Publishing 专用通道：残留 token 会让 npm 弃用 OIDC——强制清空
+          unset NODE_AUTH_TOKEN NPM_TOKEN
+          sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG" 2>/dev/null || true
+          # --no-provenance：与 tapd-mcp-server 实测一致（provenance 会被 422 拒收）
+          V=$(node -p "require('./package.json').version")
+          DIST_TAG=""
+          case "$V" in *-*) DIST_TAG="--tag rc" ;; esac
+          npm publish --access public $DIST_TAG --no-provenance
+
+      - name: Tag & GitHub Release（幂等）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          V=$(node -p "require('./package.json').version")
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            NOTES=$(git log "$PREV_TAG..HEAD" --pretty=format:"- %s (%h)" --no-merges)
+          else
+            NOTES=$(git log --pretty=format:"- %s (%h)" --no-merges -15)
+          fi
+          if git rev-parse -q --verify "refs/tags/v$V" >/dev/null; then
+            echo "::notice::tag v$V 已存在，跳过"
+          else
+            git tag -a "v$V" -m "Release v$V"
+            git push origin "v$V"
+          fi
+          PRE_FLAG=""
+          case "$V" in *-*) PRE_FLAG="--prerelease" ;; esac
+          NOTES_BODY=$(printf '## Changelog\n%s' "$NOTES")
+          gh release view "v$V" >/dev/null 2>&1 || \
+            gh release create "v$V" --title "v$V" $PRE_FLAG --notes "$NOTES_BODY"
