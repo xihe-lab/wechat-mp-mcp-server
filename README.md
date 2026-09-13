@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@xihe-lab/wechat-mp-mcp-server.svg)](https://www.npmjs.com/package/@xihe-lab/wechat-mp-mcp-server)
 [![license](https://img.shields.io/npm/l/@xihe-lab/wechat-mp-mcp-server.svg)](https://github.com/xihe-lab/wechat-mp-mcp-server/blob/main/LICENSE)
 [![Node.js](https://img.shields.io/node/v/@xihe-lab/wechat-mp-mcp-server.svg)](https://www.npmjs.com/package/@xihe-lab/wechat-mp-mcp-server)
-[![CI](https://github.com/xihe-lab/weixin-mcp-server/actions/workflows/build-check.yml/badge.svg)](https://github.com/xihe-lab/weixin-mcp-server/actions/workflows/build-check.yml)
+[![CI](https://github.com/xihe-lab/wechat-mp-mcp-server/actions/workflows/build-check.yml/badge.svg)](https://github.com/xihe-lab/wechat-mp-mcp-server/actions/workflows/build-check.yml)
 
 微信公众号 MCP Server，通过 [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) 接入 Claude、Cursor 等 AI 助手，用自然语言管理微信公众号的素材、草稿和发布。
 
