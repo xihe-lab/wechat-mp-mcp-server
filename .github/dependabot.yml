@@ -1,0 +1,43 @@
+version: 2
+updates:
+  # npm 依赖（本仓单包 @xihe-lab/wechat-mp-mcp-server）
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    groups:
+      # 生产依赖一组，安全更新单开（快通道）；devDeps 单独一组
+      prod-deps:
+        applies-to: version-updates
+        patterns: ['*']
+        exclude-patterns: ['@types/*', 'typescript', 'tsx']
+      dev-deps:
+        applies-to: version-updates
+        patterns: ['@types/*', 'typescript', 'tsx']
+      security-patches:
+        applies-to: security-updates
+        patterns: ['*']
+    labels: [type/chore, pkg/repo]
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    ignore:
+      # major 跨版（如 better-sqlite3 / playwright-core 大版本）涉及原生模块与浏览器协议，留人工决策
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  # GitHub Actions 版本更新（含 actions/checkout 等）
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels: [type/chore, pkg/repo]
+    commit-message:
+      prefix: chore(ci)
+    # actions major 跨版运行时大改，留人工决策
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']

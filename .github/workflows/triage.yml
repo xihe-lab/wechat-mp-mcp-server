@@ -1,0 +1,34 @@
+name: Issue 分诊
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      # 1) 表单已自动带 type/* + flow/needs-triage
+      # 2) 描述含 TAPD 长 ID → tapd/linked
+      # 3) 移交默认分派人（可选：secret ISSUE_TRIAGE_ASSIGNEE 配置后生效，未配置则跳过）
+      - uses: actions/github-script@v7
+        env:
+          BODY: ${{ github.event.issue.body }}
+          TITLE: ${{ github.event.issue.title }}
+          DEFAULT_ASSIGNEE: ${{ secrets.ISSUE_TRIAGE_ASSIGNEE }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const num = context.issue.number;
+            const text = `${process.env.TITLE || ''}\n${process.env.BODY || ''}`;
+            if (/\b1[01]\d{10,18}\b/.test(text)) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: num, labels: ['tapd/linked'] });
+            }
+            const assignee = process.env.DEFAULT_ASSIGNEE;
+            if (assignee && context.issue.assignees.length === 0) {
+              await github.rest.issues.addAssignees({ owner, repo, issue_number: num, assignees: [assignee] });
+            }

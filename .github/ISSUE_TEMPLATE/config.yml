@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 使用文档（README）
+    url: https://github.com/xihe-lab/wechat-mp-mcp-server#readme
+    about: 先查 README——安装配置、三层架构说明、Web 会话层登录与常见问题排障
+  - name: 🏷 TAPD 项目跟踪
+    url: https://www.tapd.cn/33468222
+    about: 需求/缺陷全量在 TAPD（workspace 33468222「微信公众号mcp」），GitHub Issue 用于外部反馈与轻量讨论

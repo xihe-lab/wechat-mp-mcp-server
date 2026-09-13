@@ -1,0 +1,6 @@
+# 默认所有者
+* @xuzhao
+
+# 安全敏感区：改这里必须人审（官方安全加固指南建议）
+/.github/           @xuzhao
+/.github/workflows/ @xuzhao

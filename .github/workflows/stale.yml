@@ -1,0 +1,31 @@
+name: Issue/PR 生命周期
+
+on:
+  schedule:
+    - cron: '33 1 * * *' # 每日 09:33 (Asia/Shanghai)，避开整点
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          # 内部项目节奏：21 天无互动标记 stale，再 7 天关闭
+          days-before-stale: 21
+          days-before-close: 7
+          stale-issue-message: '⚠️ 该问题 21 天无互动，即将关闭。仍需处理请评论或移除 flow/needs-triage 标签。有 TAPD 跟踪的请打 tapd/linked。'
+          stale-pr-message: '⚠️ 该 PR 21 天无互动，即将关闭。仍需合并请更新或评论。'
+          close-issue-reason: not_planned
+          # 豁免：高优/阻塞中/TAPD 已跟踪 的永不标记
+          exempt-issue-labels: 'prio/high,flow/blocked,tapd/linked'
+          exempt-pr-labels: 'prio/high,flow/blocked,flow/needs-triage'
+          exempt-draft-pr: true
+          stale-issue-label: flow/needs-triage
+          stale-pr-label: flow/needs-triage
+          operations-per-run: 50

@@ -1,0 +1,22 @@
+# actions/labeler 路径映射（PR 打开时自动打 pkg/* 标签，对齐 LABELS.md）
+pkg/server:
+  - changed-files:
+      - any-glob-to-any-file: src/**
+
+pkg/repo:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**
+          - package.json
+          - pnpm-lock.yaml
+          - pnpm-workspace.yaml
+          - tsconfig*.json
+          - vite.config.ts
+          - LICENSE
+          - README.md
+          - CHANGELOG.md
+
+type/docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'

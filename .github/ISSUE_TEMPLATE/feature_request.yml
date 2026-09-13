@@ -1,0 +1,42 @@
+name: 功能建议
+description: 新工具、新场景、MCP 消费体验改进
+labels: ["type/feature", "flow/needs-triage"]
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景与场景
+      description: 你遇到的问题或不便，比方案更重要——请描述真实使用场景
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: 建议方案
+      description: 期望的能力形态（MCP 工具 / 工具参数 / Server 行为均可）
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: 期望的交互示例
+      placeholder: |
+        > 把这篇长文直接写进草稿箱，检查完排版问题再给我编辑器链接
+
+        即依次调用 wechat_html_check → wechat_web_write_draft → 返回 editor_url
+  - type: dropdown
+    id: area
+    attributes:
+      label: 期望落点
+      options:
+        - 官方 API 层（素材 / 草稿 / 发布 / 凭据）
+        - Web 会话层（登录态 / 长文直写 / 数据）
+        - HTML 检查 / 本地工具
+        - 仓库级（构建 / 发布 / 安装）
+        - 文档 / 其他
+  - type: input
+    id: tapd
+    attributes:
+      label: 关联 TAPD 需求 ID（可选）
+      description: 若已在 TAPD 立项请填长 ID 或短 ID，便于双向追踪
+      placeholder: "1133468222001001557"

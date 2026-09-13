@@ -1,0 +1,44 @@
+name: PR 自动标签
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: labeler-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      # 官方 labeler：按 .github/labeler.yml 的路径映射自动打 pkg/*、type/docs
+      - uses: actions/labeler@v5
+        with:
+          config-path: .github/labeler.yml
+          sync-labels: true # 路径不再命中时移除（仅移除本工具管理的标签）
+
+  tapd-link:
+    runs-on: ubuntu-latest
+    steps:
+      # PR 描述或标题含 TAPD 长 ID（19-20 位数字）→ 打 tapd/linked
+      # 注：脚本注入防护——不可信输入一律经 env 中转（官方安全指南）
+      - uses: actions/github-script@v7
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        with:
+          script: |
+            const text = `${process.env.PR_TITLE || ''}\n${process.env.PR_BODY || ''}`;
+            if (/\b1[01]\d{10,18}\b/.test(text)) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['tapd/linked'],
+              });
+            }
