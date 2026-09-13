@@ -1,16 +1,16 @@
 {
   "name": "@xihe-lab/wechat-mp-mcp-server",
-  "version": "0.1.2",
-  "description": "WeChat MP (Media Platform) MCP Server for managing articles, drafts and media via AI assistants",
+  "version": "0.2.0",
+  "description": "WeChat Official Account (公众号) MCP Server — 25 tools spanning official API, editor channel and HTML lint: media, drafts, long-form publishing and stats via AI assistants",
   "type": "module",
+  "packageManager": "pnpm@12.3.4",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "bin": {
     "wechat-mp-mcp-server": "./dist/index.js"
   },
   "scripts": {
     "start": "node dist/index.js",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "pnpm type-check && pnpm test && pnpm build",
     "build": "vite build",
     "dev": "vite",
     "lint": "eslint src --ext ts,tsx",
@@ -22,16 +22,12 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "axios": "^1.6.0",
     "better-sqlite3": "^12.10.0",
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
     "form-data": "^4.0.5",
-    "sqlite3": "^5.1.6",
+    "playwright-core": "^1.63.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
@@ -42,22 +38,31 @@
     "vitest": "^1.2.0"
   },
   "keywords": [
-    "weixin",
     "wechat",
-    "mcp",
+    "weixin",
+    "wechat-mp",
     "official-account",
+    "gongzhonghao",
+    "公众号",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
     "claude",
-    "cursor"
+    "cursor",
+    "draft",
+    "publishing",
+    "automation"
   ],
   "author": "xihe-lab",
   "license": "Apache-2.0",
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "repository": {
     "type": "git",
@@ -70,11 +75,5 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild"
-    ]
   }
 }
